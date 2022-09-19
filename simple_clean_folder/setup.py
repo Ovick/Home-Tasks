@@ -9,5 +9,5 @@ setup(
 	author_email='kuznetsov.postbox@gmail.com',
 	license='MIT',
 	packages=find_namespace_packages(),
-	entry_points={'console_scripts': ['cleanfolder = clean_folder.clean:main']}
+	entry_points={'console_scripts': ['cleanfolder = simple_clean_folder.clean:main']}
 )
