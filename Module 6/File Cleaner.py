@@ -1,3 +1,5 @@
+from datetime import datetime
+from logging import exception
 import os
 import sys
 import shutil
@@ -38,7 +40,7 @@ extentionsCatalog = {
 }
 
 
-def prepareTranslationMap():
+def prepareTranslationMap() -> dict():
     CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґ"
     CYR = tuple(CYRILLIC_SYMBOLS)
     LAT = (
@@ -100,17 +102,24 @@ def unzipArchives(dirPath: str):
     return
 
 
+def getTimestampStr() -> str:
+    curTime = datetime.now()
+    return f"_{curTime.tm_hour}{curTime.tm_min}{curTime.tm_sec}"
+
+
 def main():
     translation_map = prepareTranslationMap()
     categorizedFiles = list()
     knownExtentions = set()
     unknownExtentions = set()
-    rootFolder = sys.argv[1]  # "C:/TopDir"
+    rootFolder = sys.argv[1]
     rootPath = Path(rootFolder)
     if rootPath.exists():
+        # create standard folders
         for folder in foldersCatalog.values():
             Path.mkdir(Path.joinpath(rootPath, folder),
                        parents=True, exist_ok=True)
+        # parse files names and pathes
         files = listFiles(rootPath)
         for f in files:
             fDir = f[0]
@@ -128,23 +137,30 @@ def main():
             newDir = Path.joinpath(rootPath, foldersCatalog[folderId])
             newFileLocation = Path.joinpath(newDir, newName+fExtWithDot)
             if newFileLocation.exists():
-                # if file already exists add a timestamp GMT
-                curTime = gmtime()
-                timeStamp = f"_{curTime.tm_hour}{curTime.tm_min}{curTime.tm_sec}"
+                # if file already exists add a timestamp
+                timeStamp = getTimestampStr()
                 newFileLocation = Path.joinpath(
                     newDir, newName+timeStamp+fExtWithDot)
             categorizedFiles.append(
                 foldersCatalog[folderId] + ' \ ' + newName +
                 fExtWithDot + '<--' + fName+fExtWithDot
             )
-            shutil.move(currentFileLocation, newFileLocation)
+            try:
+                shutil.move(currentFileLocation, newFileLocation)
+            except:
+                print(
+                    f"Process error. Cannot move file from {currentFileLocation} to {newFileLocation}")
+                raise
         deleteEmptyFolders(rootFolder)
         unzipArchives(rootFolder)
+        # output
         print(f"Known extentions: {knownExtentions}")
         print(f"Unknown extentions: {unknownExtentions}")
         categorizedFiles.sort()
         for f in categorizedFiles:
             print(f)
+    else:
+        print(f"The path {rootFolder} does not exist")
 
 
 if __name__ == '__main__':
