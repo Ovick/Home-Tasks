@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: simple-clean-folder
+Version: 1.0
+Summary: Cleans a given folder by sorting and moving files into set of typed folders.
+Home-page: https://github.com/Ovick/Home-Tasks/tree/main/simple_clean_folder
+Author: Volodymyr Kuznetsov
+Author-email: kuznetsov.postbox@gmail.com
+License: MIT
