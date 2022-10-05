@@ -1,25 +1,6 @@
-USER_DATA = {
-    "": "",
-}
-
-IS_WORKING = False
-
-COMMAND = {
-    "hello": "Start work with this bot",
-    "add": "Add a phone number - add <user name> <phone number>",
-    "change": "Change a phone number - change <user name> <phone number>",
-    "phone": "Show user's phone number - phone <user name>",
-    "show all": "Show all contacts",
-    "good bye": "Finish work and exit",
-    "close": "Finish work and exit",
-    "exit": "Finish work and exit"
-}
-
 # decorator for input validation
-
-
 def input_error(func):
-    def inner(userData: tuple):
+    def inner(userData: tuple, USER_DATA: dict):
         response = ""
         if func.__name__ == "add_phone_handler" \
                 or func.__name__ == "change_phone_handler":
@@ -30,7 +11,7 @@ def input_error(func):
                 response = "Provide user name.\n"
         if response == "":
             try:
-                response = func(userData)  # call decorated function
+                response = func(userData, USER_DATA)  # call decorated function
             except KeyError:
                 response = "Error: cannot find this user."
             except ValueError:
@@ -43,26 +24,22 @@ def input_error(func):
     return inner
 
 
-def hello_handler(*args):
-    global USER_DATA
-    global IS_WORKING
-    USER_DATA.clear()
-    IS_WORKING = True
-    responseMessage = "How can I help you?"
+def hello_handler(isWorking: bool):
+    if isWorking:
+        responseMessage = "Already working. Please enter an action command.\n"
+    else:
+        responseMessage = "How can I help you?\n"
     return responseMessage
 
 
-def exit_handler(*args):
-    global IS_WORKING
-    IS_WORKING = False
+def exit_handler():
     responseMessage = "Good bye!"
     return responseMessage
 
 
 @input_error
-def add_phone_handler(userData: tuple):
-    global USER_DATA
-    if userData[0] in USER_DATA.keys():
+def add_phone_handler(userData: tuple, USER_DATA: dict):
+    if userData[0] in USER_DATA:
         responseMessage = f"Record for {userData[0]} already exists."
     else:
         USER_DATA[userData[0]] = userData[1]
@@ -71,8 +48,7 @@ def add_phone_handler(userData: tuple):
 
 
 @input_error
-def change_phone_handler(userData: tuple):
-    global USER_DATA
+def change_phone_handler(userData: tuple, USER_DATA: dict):
     if userData[0] in USER_DATA.keys():
         USER_DATA[userData[0]] = userData[1]
     else:
@@ -82,16 +58,14 @@ def change_phone_handler(userData: tuple):
 
 
 @input_error
-def show_phone_handler(userData: tuple):
-    global USER_DATA
+def show_phone_handler(userData: tuple, USER_DATA: dict):
     userPhoneNumber = USER_DATA[userData[0]]
     responseMessage = f"Found {userData[0]}: {userPhoneNumber}"
     return responseMessage
 
 
 @input_error
-def show_all_phones_handler(userData: tuple):
-    global USER_DATA
+def show_all_phones_handler(userData: tuple, USER_DATA):
     i = 1
     responseMessage = "Current dictionary contains:\n"
     for key, value in USER_DATA.items():
@@ -100,42 +74,9 @@ def show_all_phones_handler(userData: tuple):
     return responseMessage
 
 
-COMMAND_HANDLER = {
-    "hello": hello_handler,
-    "add": add_phone_handler,
-    "change": change_phone_handler,
-    "phone": show_phone_handler,
-    "show all": show_all_phones_handler,
-    "good bye": exit_handler,
-    "close": exit_handler,
-    "exit": exit_handler
-}
-
 # decorator for command validation
 
-# TO-DO embed output to main()
-
-
-def validate_input_command(func):
-    def inner(command):
-        result = func(command)  # call decorated function
-        if result == None:
-            print(f"The command does not exist.\n")
-        else:
-            if command in ("hello") and IS_WORKING:
-                result = None
-                print("Already working. Please enter an action command.\n")
-            elif command in (
-                "add", "change", "phone", "show all"
-            ) and not IS_WORKING:
-                result = None
-                print(f"Cannot start work with action command '{command}'.\n")
-        return result
-    return inner
-
-
-@validate_input_command
-def get_command_handler(command: str):
+def get_command_handler(command: str, COMMAND_HANDLER: dict):
     command = command.lower()
     commandHandler = None
     if len(COMMAND_HANDLER) > 0:
@@ -145,7 +86,7 @@ def get_command_handler(command: str):
 # parse user input
 
 
-def parse_command_line(command_line: str) -> str:
+def parse_command_line(command_line: str, COMMAND: dict) -> str:
     command = ""
     userPhoneNumber = ""
     userName = ""
@@ -154,11 +95,11 @@ def parse_command_line(command_line: str) -> str:
         if command_line.startswith(registeredCommand):
             command = registeredCommand
             data = command_line.removeprefix(command).strip()
-            if not (data == "" or data == None):
+            if data:
                 data_components = data.split(" ")
-                for dc in data_components:
-                    if dc.isalpha():
-                        userName += dc + " "
+                for component in data_components:
+                    if component.isalpha():
+                        userName += component + " "
                 userName = userName.strip()
                 userPhoneNumber = data.removeprefix(userName).strip()
             break
@@ -168,28 +109,81 @@ def parse_command_line(command_line: str) -> str:
 
 
 def main():
+    USER_DATA = {
+        "": "",
+    }
+
+    isWorking = False
+
+    COMMAND = {
+        "hello": "Start work with this bot",
+        "add": "Add a phone number - add <user name> <phone number>",
+        "change": "Change a phone number - change <user name> <phone number>",
+        "phone": "Show user's phone number - phone <user name>",
+        "show all": "Show all contacts",
+        "good bye": "Finish work and exit",
+        "close": "Finish work and exit",
+        "exit": "Finish work and exit"
+    }
+
+    COMMAND_HANDLER = {
+        "hello": hello_handler,
+        "add": add_phone_handler,
+        "change": change_phone_handler,
+        "phone": show_phone_handler,
+        "show all": show_all_phones_handler,
+        "good bye": exit_handler,
+        "close": exit_handler,
+        "exit": exit_handler
+    }
+
     commandHandler = None
     print("Hello! This is assistant bot. Here is what I can do:")
     for key, value in COMMAND.items():
         print("{:<15}{}".format(key, value))
+
     # awaiting for a command to start the bot or exit
-    while commandHandler == None:
+    while not isWorking:
         inputCommand = str(
             input("Please enter a command to start work or exit:\n"))
-        parsedCommand = parse_command_line(inputCommand)
-        commandHandler = get_command_handler(parsedCommand[0])
-
-    response = commandHandler()
-    print(response)
+        parsedCommand = parse_command_line(inputCommand, COMMAND)
+        commandHandler = get_command_handler(parsedCommand[0], COMMAND_HANDLER)
+        if not commandHandler is None:
+            if commandHandler.__name__ == "hello_handler":
+                response = commandHandler(isWorking)
+                print(response)
+                isWorking = True
+                USER_DATA.clear()
+            elif commandHandler.__name__ == "exit_handler":
+                response = commandHandler()
+                print(response)
+                break
+            else:
+                print(
+                    f"Cannot start work with action command {parsedCommand[0]}.\n")
+        else:
+            print("The command does not exist.\n")
     # work loop
-    while IS_WORKING:
+    while isWorking:
         inputCommand = str(input("Please enter an action command:\n"))
         # parse input, get a command and userData
-        parsedCommand = parse_command_line(inputCommand)
-        commandHandler = get_command_handler(parsedCommand[0])  # command
-        if commandHandler != None:
-            response = commandHandler(parsedCommand[1])  # userData
-            print(response)
+        parsedCommand = parse_command_line(inputCommand, COMMAND)
+        commandHandler = get_command_handler(
+            parsedCommand[0], COMMAND_HANDLER)  # command
+        if not commandHandler is None:
+            if commandHandler.__name__ == "hello_handler":
+                response = commandHandler(isWorking)
+                print(response)
+            elif commandHandler.__name__ == "exit_handler":
+                response = commandHandler()
+                print(response)
+                isWorking = False
+            else:
+                response = commandHandler(
+                    parsedCommand[1], USER_DATA)  # userData
+                print(response)
+        else:
+            print(f"The command {parsedCommand[0]} does not exist.")
     return
 
 
