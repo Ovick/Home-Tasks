@@ -60,17 +60,18 @@ def change_phone_handler(userData: tuple, USER_DATA: dict):
 @input_error
 def show_phone_handler(userData: tuple, USER_DATA: dict):
     userPhoneNumber = USER_DATA[userData[0]]
-    responseMessage = f"Found {userData[0]}: {userPhoneNumber}"
+    responseMessage = f"Found {userData[0]}: {userPhoneNumber}.\n"
     return responseMessage
 
 
 @input_error
 def show_all_phones_handler(userData: tuple, USER_DATA):
-    i = 1
-    responseMessage = "Current dictionary contains:\n"
-    for key, value in USER_DATA.items():
-        responseMessage += f"{i}. {key}: {value}\n"
-        i += 1
+    if USER_DATA:
+        responseMessage = "Current dictionary contains:\n"
+        for item in enumerate(USER_DATA.items(), 1):
+            responseMessage += f"{item[0]}. {item[1][0]}: {item[1][1]}\n"
+    else:
+        responseMessage = "Current dictionary is empty.\n"
     return responseMessage
 
 
@@ -79,7 +80,7 @@ def show_all_phones_handler(userData: tuple, USER_DATA):
 def get_command_handler(command: str, COMMAND_HANDLER: dict):
     command = command.lower()
     commandHandler = None
-    if len(COMMAND_HANDLER) > 0:
+    if COMMAND_HANDLER:
         commandHandler = COMMAND_HANDLER.get(command)
     return commandHandler
 
