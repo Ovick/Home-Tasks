@@ -39,34 +39,29 @@ class Currency_Rates_Request():
             result.append(date_str)
         self.dates_str_list = result
 
-    async def request_rates_for_date(self):
-        if self.dates_str_list:
-            async with aiohttp.ClientSession() as session:
-                for date_str in self.dates_str_list:
-                    url = 'https://api.privatbank.ua/p24api/exchange_rates?json&date='+date_str
-                    try:
-                        async with session.get(url) as response:
-                            if response.status == 200:
-                                result = await response.text()
-                                is_rate_collected = True
-                            else:
-                                result = f"Error status: {response.status} for {url}"
-                                is_rate_collected = False
-                    except aiohttp.ClientConnectorError as err:
-                        result = f'Connection error: {url}, {str(err)}'
-                        is_rate_collected = False
-                    self.responses.append(
-                        (result, is_rate_collected, date_str))
-        else:
-            result = 'Requested date is not provided'
-            is_rate_collected = False
-            self.responses.append((result, is_rate_collected, date_str))
+    async def request(self):
+        async with aiohttp.ClientSession() as session:
+            for date_str in self.dates_str_list:
+                url = 'https://api.privatbank.ua/p24api/exchange_rates?json&date='+date_str
+                try:
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            is_rate_collected = True
+                        else:
+                            result = f"Error status: {response.status} for {url}"
+                            is_rate_collected = False
+                except aiohttp.ClientConnectorError as err:
+                    result = f'Connection error: {url}, {str(err)}'
+                    is_rate_collected = False
+                self.responses.append(
+                    (result, is_rate_collected, date_str))
 
     def form_output(self, currencies: list):
         self.formatted_output = f'Currency rates for {currencies if currencies else "all currencies"}:\n'
         for response in self.responses:
             if response[1]:
-                rates_dict = json.loads(response[0])
+                rates_dict = response[0]
                 self.formatted_output += f'Base currency {rates_dict["baseCurrencyLit"]}, {response[2]}\n'
                 for rate in rates_dict['exchangeRate']:
                     rate_line = f"{rate['currency']}: sale {rate['saleRateNB']}, purchase {rate['purchaseRateNB']}\n"
@@ -83,21 +78,34 @@ class Currency_Rates_Request():
         device.output_message(self.formatted_output)
 
 
+class Session():
+    def __init__(self, args: list, device: Output_Device) -> None:
+        self.device = device
+        self.currencies = []
+        self.number_of_days = 1
+        try:
+            self.number_of_days = int(args[1])
+        except IndexError:
+            self.device.output_message(
+                "Rates for 1 day will be requested.")
+        except ValueError:
+            self.device.output_message(
+                "Request parameters should be <number of days> [currency1, currency2, ...].")
+        else:
+            if self.number_of_days > 10:
+                self.number_of_days = 10
+                self.device.output_message(
+                    "Maximum 10 days can be requested.")
+        try:
+            self.currencies = args[2]
+        except IndexError:
+            self.currencies = None
+
+
 if __name__ == '__main__':
     user_interface = Output_Console()
+    user_session = Session(sys.argv, user_interface)
     rates_request = Currency_Rates_Request()
-    try:
-        number_of_days = int(sys.argv[1])
-    except IndexError:
-        number_of_days = 1
-    else:
-        if number_of_days > 10:
-            number_of_days = 10
-            user_interface.output_message("Maximum 10 days can be requested.")
-    try:
-        requested_currencies = sys.argv[2]
-    except IndexError:
-        requested_currencies = None
-    rates_request.form_dates_list(number_of_days)
-    asyncio.run(rates_request.request_rates_for_date())
-    rates_request.send_output(requested_currencies, user_interface)
+    rates_request.form_dates_list(user_session.number_of_days)
+    asyncio.run(rates_request.request())
+    rates_request.send_output(user_session.currencies, user_session.device)
