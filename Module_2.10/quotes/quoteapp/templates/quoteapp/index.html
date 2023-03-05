@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Quotes</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css" />
+</head>
+
+<body>
+    <main class="container">
+    <nav style="margin-bottom: 20px; border-bottom: 2px solid; padding-left: 30px">
+        {% if user.is_authenticated %}
+        <ul>
+            <li><a href="{% url 'quoteapp:quote' %}" role="button">Add Quote</a></li>
+            <li><a href="{% url 'quoteapp:tag' %}" role="button">Add Tag</a></li>
+            <li><a href="{% url 'quoteapp:author' %}" role="button">Add Author</a></li>
+        </ul>
+        <ul>
+            <li>Welcome <b>{{ user.username }}!</b></li>
+            <li><a href="{% url 'users:logout' %}" role="button">Logout</a></li>
+        </ul>
+        {% else %}
+        <ul>
+            <li><a href="{% url 'users:signup' %}" role="button">Sign Up</a></li>
+            <li><a href="{% url 'users:login' %}" role="button">Login</a></li>
+        </ul>
+        {% endif %}
+    </nav>
+
+        {% for quote in quotes %}
+        <ul>
+            <li>
+                <a href="{% url 'quoteapp:detail' quote.id %}" role="button" class="outline"> {{ quote.quote }} </a>
+                <p>by 
+                    <a href="{% url 'quoteapp:author_detail' quote.author %}" role="textbox"> {{ quote.author }} </a>
+                </p>
+            </li>
+        </ul>
+        {% endfor %}
+    </main>
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+{% extends "quoteapp/base.html" %}
+{% load extract_tags %}
+
+{% block content %}
+
+<h3>Author: {{quote.author}}</h3>
+Quote: {{quote.quote}}<br>
+<p>Tags: <small>
+        {{ quote.tags|tags }}
+    </small></p>
+{% if user.is_authenticated %}
+    <a href="{% url 'quoteapp:delete' quote.id %}" role="button" class="outline"> Delete quote </a>
+{% endif %}
+{% endblock %}
