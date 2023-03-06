@@ -1,4 +1,4 @@
-from django.forms import ModelForm, CharField, TextInput, DateField, DateInput, Textarea
+from django.forms import ModelForm, CharField, TextInput, DateField, DateInput, Textarea, ModelChoiceField, ModelMultipleChoiceField, Select, SelectMultiple
 from .models import Tag, Author, Quote
 
 
@@ -38,10 +38,27 @@ class AuthorDetailForm(ModelForm):
 
 
 class QuoteForm(ModelForm):
+
     quote = CharField(min_length=5, max_length=4000,
                       required=True, widget=TextInput())
+    author = ModelChoiceField(queryset=Author.objects.all().order_by(
+        'fullname'), widget=Select(attrs={"class": "form-select"}))
+    tags = ModelMultipleChoiceField(queryset=Tag.objects.all().order_by(
+        'name'), widget=SelectMultiple(attrs={"class": "form-select", "size": "7"}))
 
     class Meta:
         model = Quote
-        fields = ['quote']
-        exclude = ['tags', 'author']
+        fields = ['quote', 'author', 'tags']
+
+    """
+    quote = CharField(min_length=5, max_length=4000,
+                      required=True, widget=TextInput())
+
+    author = CharField(min_length=5, max_length=50,
+                       required=True, widget=TextInput())
+
+    class Meta:
+        model = Quote
+        fields = ['quote', 'author']
+        exclude = ['tags']
+    """

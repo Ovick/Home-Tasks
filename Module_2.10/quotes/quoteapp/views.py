@@ -61,7 +61,7 @@ def quote(request):
                 new_quote.tags.add(tag)
 
             new_quote.author = Author.objects.filter(
-                fullname=request.POST.get('authors').get())
+                fullname=request.POST.get('authors'))
 
             return redirect(to='quoteapp:main')
         else:
