@@ -46,8 +46,8 @@ def author_detail(request, author_name):
 
 @login_required
 def quote(request):
+
     tags = Tag.objects.all()
-    authors = Author.objects.all()
 
     if request.method == 'POST':
         form = QuoteForm(request.POST)
@@ -55,22 +55,19 @@ def quote(request):
             new_quote = form.save(commit=False)
             new_quote.user = request.user
             new_quote.save()
+
             choice_tags = Tag.objects.filter(
                 name__in=request.POST.getlist('tags'))
             for tag in choice_tags.iterator():
                 new_quote.tags.add(tag)
 
-            new_quote.author = Author.objects.filter(
-                fullname=request.POST.get('authors'))
-
             return redirect(to='quoteapp:main')
         else:
-            return render(request, 'quoteapp/quote.html', {"tags": tags, "authors": authors, 'form': form})
+            return render(request, 'quoteapp/quote.html', {"tags": tags, 'form': form})
+    return render(request, 'quoteapp/quote.html', {"tags": tags, 'form': QuoteForm()})
 
-    return render(request, 'quoteapp/quote.html', {"tags": tags, "authors": authors, 'form': QuoteForm()})
 
-
-def detail(request, quote_id):
+def detail(request,  quote_id):
     quote = get_object_or_404(Quote, pk=quote_id)
     return render(request, 'quoteapp/detail.html', {"quote": quote})
 
