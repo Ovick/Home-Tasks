@@ -1,13 +1,12 @@
 from typing import List
 
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import extract, or_, and_
 
 from src.database.models import Contact
 from src.schemas import ContactModel
-from src.repository.utils import days_to_birthday
 
-from datetime import datetime
+from datetime import date, timedelta
 
 
 async def get_contacts(skip: int, limit: int, db: Session) -> List[Contact]:
@@ -15,7 +14,19 @@ async def get_contacts(skip: int, limit: int, db: Session) -> List[Contact]:
 
 
 async def get_contacts_with_birthday(period_in_days: int, skip: int, limit: int, db: Session) -> List[Contact]:
-    return db.query(Contact).filter(days_to_birthday(Contact.born_date) <= period_in_days).offset(skip).limit(limit).all()
+    bdays_up_to_date = date.today() + timedelta(days=period_in_days)
+    return db.query(Contact).filter(
+        or_(  # spans across two months
+            and_(and_(extract("month", Contact.born_date) == bdays_up_to_date.month, extract("day", Contact.born_date) <= bdays_up_to_date.day),
+                 and_(extract("month", Contact.born_date) == date.today().month, extract(
+                     "day", Contact.born_date) >= date.today().day),
+                 date.today().month < bdays_up_to_date.month
+                 ),  # within one month
+            and_(and_(extract("day", Contact.born_date) >= date.today().day, extract("day", Contact.born_date) <= bdays_up_to_date.day),
+                 date.today().month == bdays_up_to_date.month
+                 )
+        )
+    ).offset(skip).limit(limit).all()
 
 
 async def get_contact(contact_id: int, db: Session) -> Contact:
